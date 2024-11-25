@@ -1,4 +1,4 @@
-package parser_test
+package tests
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/antlr4-go/antlr/v4"
-	pgparser "github.com/khulnasoft/go-parser/postgresql-parser"
+	pgparser "github.com/khulnasoft/go-parser/parsers/postgresql"
 	"github.com/stretchr/testify/require"
 )
 

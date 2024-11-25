@@ -29,7 +29,7 @@ requirements:
 
 ## Test the parser
 
-Run `TestPLSQLParser` in `parser_test.go` to test the parser.
+Run `TestPLSQLParser` in `tests.go` to test the parser.
 
 ```bash
 go test -v

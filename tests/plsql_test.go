@@ -1,14 +1,13 @@
-package parser_test
+package tests
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
 	"testing"
 
 	"github.com/antlr4-go/antlr/v4"
-	mysqlparser "github.com/khulnasoft/go-parser/mysql-parser"
+	plsqlparser "github.com/khulnasoft/go-parser/parsers/plsql"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,28 +36,35 @@ func (l *CustomErrorListener) ReportContextSensitivity(recognizer antlr.Parser, 
 	antlr.ConsoleErrorListenerINSTANCE.ReportContextSensitivity(recognizer, dfa, startIndex, stopIndex, prediction, configs)
 }
 
-func TestMySQLDBSQLParser(t *testing.T) {
+func TestPLSQLParser(t *testing.T) {
 	examples, err := os.ReadDir("examples")
 	require.NoError(t, err)
 
-	for _, file := range examples {
-		filePath := path.Join("examples", file.Name())
+	examplesSQLScript, err := os.ReadDir("examples-sql-script")
+	require.NoError(t, err)
+
+	files := append(examples, examplesSQLScript...)
+
+	for i, file := range files {
+		if strings.HasSuffix(file.Name(), ".sql.tree") {
+			continue
+		}
+		var filePath string
+		if i < len(examples) {
+			filePath = path.Join("examples", file.Name())
+		} else {
+			filePath = path.Join("examples-sql-script", file.Name())
+		}
 		t.Run(filePath, func(t *testing.T) {
 			t.Parallel()
-			// read all the bytes from the file
-			data, err := ioutil.ReadFile(filePath)
+			input, err := antlr.NewFileStream(filePath)
 			require.NoError(t, err)
 
-			dataString := strings.TrimRight(string(data), " \t\r\n;") + "\n;"
-			// dataString := string(data)
-			// antlr.ConfigureRuntime(antlr.WithParserATNSimulatorDebug(true))
-
-			input := antlr.NewInputStream(dataString)
-
-			lexer := mysqlparser.NewMySQLLexer(input)
+			lexer := plsqlparser.NewPlSqlLexer(input)
 
 			stream := antlr.NewCommonTokenStream(lexer, 0)
-			p := mysqlparser.NewMySQLParser(stream)
+			p := plsqlparser.NewPlSqlParser(stream)
+			p.SetVersion12(true)
 
 			lexerErrors := &CustomErrorListener{}
 			lexer.RemoveErrorListeners()
@@ -69,17 +75,10 @@ func TestMySQLDBSQLParser(t *testing.T) {
 			p.AddErrorListener(parserErrors)
 
 			p.BuildParseTrees = true
-
-			tree := p.Script()
-
-			// tree := p.FromClause()
-
-			// fmt.Println(stream.GetAllText())
+			_ = p.Sql_script()
 
 			require.Equal(t, 0, lexerErrors.errors)
 			require.Equal(t, 0, parserErrors.errors)
-
-			require.Equal(t, dataString, stream.GetTextFromRuleContext(tree))
 		})
 	}
 }

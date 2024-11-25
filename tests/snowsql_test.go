@@ -1,4 +1,4 @@
-package parser_test
+package tests
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/antlr4-go/antlr/v4"
-	snowqlparser "github.com/khulnasoft/go-parser/snowsql-parser"
+	snowqlparser "github.com/khulnasoft/go-parser/parsers/snowsql"
 	"github.com/stretchr/testify/require"
 )
 

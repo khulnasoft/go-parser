@@ -25,7 +25,7 @@ requirements:
 
 ## Test the parser
 
-Run `TestSnowflakeSQLParser` in `parser_test.go` to test the parser.
+Run `TestSnowflakeSQLParser` in `tests.go` to test the parser.
 
 ```bash
 go test -v

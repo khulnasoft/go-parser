@@ -1,13 +1,14 @@
-package parser_test
+package tests
 
 import (
+	"io/ioutil"
 	"os"
 	"path"
-	"sort"
+	"strings"
 	"testing"
 
 	"github.com/antlr4-go/antlr/v4"
-	googlesqlparser "github.com/khulnasoft/go-parser/google-sql-parser"
+	mysqlparser "github.com/khulnasoft/go-parser/parsers/mysql"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,19 +37,28 @@ func (l *CustomErrorListener) ReportContextSensitivity(recognizer antlr.Parser, 
 	antlr.ConsoleErrorListenerINSTANCE.ReportContextSensitivity(recognizer, dfa, startIndex, stopIndex, prediction, configs)
 }
 
-func TestGoogleSQLParser(t *testing.T) {
-	testFilePaths := scanSQLFileInDirRecursive(t, "examples")
-	sort.StringSlice(testFilePaths).Sort()
+func TestMySQLDBSQLParser(t *testing.T) {
+	examples, err := os.ReadDir("examples")
+	require.NoError(t, err)
 
-	for _, fp := range testFilePaths {
-		t.Run(fp, func(t *testing.T) {
-			input, err := antlr.NewFileStream(fp)
+	for _, file := range examples {
+		filePath := path.Join("examples", file.Name())
+		t.Run(filePath, func(t *testing.T) {
+			t.Parallel()
+			// read all the bytes from the file
+			data, err := ioutil.ReadFile(filePath)
 			require.NoError(t, err)
 
-			lexer := googlesqlparser.NewGoogleSQLLexer(input)
+			dataString := strings.TrimRight(string(data), " \t\r\n;") + "\n;"
+			// dataString := string(data)
+			// antlr.ConfigureRuntime(antlr.WithParserATNSimulatorDebug(true))
+
+			input := antlr.NewInputStream(dataString)
+
+			lexer := mysqlparser.NewMySQLLexer(input)
 
 			stream := antlr.NewCommonTokenStream(lexer, 0)
-			p := googlesqlparser.NewGoogleSQLParser(stream)
+			p := mysqlparser.NewMySQLParser(stream)
 
 			lexerErrors := &CustomErrorListener{}
 			lexer.RemoveErrorListeners()
@@ -60,28 +70,16 @@ func TestGoogleSQLParser(t *testing.T) {
 
 			p.BuildParseTrees = true
 
-			_ = p.Root()
+			tree := p.Script()
 
-			require.Equal(t, 0, lexerErrors.errors, "file: %s", fp)
-			require.Equal(t, 0, parserErrors.errors, "file: %s", fp)
+			// tree := p.FromClause()
+
+			// fmt.Println(stream.GetAllText())
+
+			require.Equal(t, 0, lexerErrors.errors)
+			require.Equal(t, 0, parserErrors.errors)
+
+			require.Equal(t, dataString, stream.GetTextFromRuleContext(tree))
 		})
 	}
-}
-
-func scanSQLFileInDirRecursive(t *testing.T, dir string) []string {
-	var fps []string
-
-	files, err := os.ReadDir(dir)
-	require.NoError(t, err)
-
-	for _, file := range files {
-		if file.IsDir() {
-			rfps := scanSQLFileInDirRecursive(t, path.Join(dir, file.Name()))
-			fps = append(fps, rfps...)
-		} else {
-			fps = append(fps, path.Join(dir, file.Name()))
-		}
-	}
-
-	return fps
 }

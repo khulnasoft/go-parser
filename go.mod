@@ -1,4 +1,4 @@
-module github.com/khulnasoft/go-parser/google-sql-parser
+module github.com/khulnasoft/go-parser
 
 go 1.23.1
 

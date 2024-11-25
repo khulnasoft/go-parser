@@ -1,4 +1,4 @@
-package parser_test
+package tests
 
 import (
 	"io/ioutil"
@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/antlr4-go/antlr/v4"
-	tidbparser "github.com/khulnasoft/go-parser/tidb-parser"
+	tidbparser "github.com/khulnasoft/go-parser/parsers/tidb"
 	"github.com/stretchr/testify/require"
 )
 
